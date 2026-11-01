@@ -3,7 +3,6 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { createRequire } from "node:module";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/client/stdio";
 
@@ -21,11 +20,16 @@ try {
   runNpm(["init", "--yes"], clean);
   runNpm(["install", "--omit=dev", "--no-audit", "--no-fund", artifact], clean);
   const entry = join(clean, "node_modules", "deepseek-mcp-server", "build", "index.js");
-  const require = createRequire(entry);
-  const Database = require("better-sqlite3");
-  const db = new Database(join(root, "native-check.sqlite"));
-  assert.equal(db.prepare("SELECT 1 AS ok").get().ok, 1);
-  db.close();
+  // Load native addons in a child so Windows can unload them before cleanup.
+  execFileSync(process.execPath, ["--input-type=module", "-e", `
+    import assert from 'node:assert/strict';
+    import { createRequire } from 'node:module';
+    const require = createRequire(process.argv[1]);
+    const Database = require('better-sqlite3');
+    const db = new Database(process.argv[2]);
+    assert.equal(db.prepare('SELECT 1 AS ok').get().ok, 1);
+    db.close();
+  `, entry, join(root, "native-check.sqlite")], { timeout: 15000 });
   const transport = new StdioClientTransport({ command: process.execPath, args: [entry], cwd: clean, env: {
     ...getDefaultEnvironment(), DEEPSEEK_API_KEY: "package-smoke-not-real", MCP_TRANSPORT: "stdio",
     DEEPSEEK_COLLAB_STATE_DIR: join(root, "state"),

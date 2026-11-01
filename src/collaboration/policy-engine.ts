@@ -9,7 +9,7 @@ const secretPatterns = [
   /\b(?:sk-[a-z0-9_-]{12,}|gh[pousr]_[a-z0-9]{20,}|github_pat_[a-z0-9_]{20,}|AKIA[A-Z0-9]{16})\b/i,
   /\b(?:api[_-]?key|access[_-]?token|password|client[_-]?secret)\s*[=:]\s*["']?(?!REPLACE|example|test\b|\$\{|process\.env)[a-z0-9_+\/-]{8,}/i,
 ];
-const secretPath = /(?:^|[\\/])(?:\.env[^\\/]*|\.ssh|\.aws|\.codex|id_rsa|id_ed25519|credentials|.*\.(?:pem|key))(?:[\\/]|$)/i;
+const secretPath = /(?:^|[\\/"\s])(?:\.env[^\\/"\s]*|\.ssh|\.aws|\.codex|id_rsa|id_ed25519|credentials|[^\\/"\s]*\.(?:pem|key))(?=[\\/"\s]|$)/i;
 
 export class PolicyEngine {
   assertGeneration(policy: EffectivePolicy): void {

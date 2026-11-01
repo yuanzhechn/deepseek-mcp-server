@@ -1,7 +1,7 @@
 import { mkdir, open, readFile, rename, rm, rmdir } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join, resolve, relative, isAbsolute } from "node:path";
-import { realpathSync } from "node:fs";
+import { dirname, join, resolve, relative, isAbsolute, parse } from "node:path";
+import { realpathSync, statSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { CollaborationError } from "./errors.js";
@@ -19,7 +19,9 @@ export function canonicalProject(path: string): string {
     throw new CollaborationError("path_blocked", "Project must be an absolute local path without traversal.");
   }
   try {
-    const canonical = realpathSync(path).replace(/\\/g, "/").replace(/\/$/, "");
+    if (!statSync(path).isDirectory()) throw new Error("Not a directory");
+    const real = realpathSync(path);
+    const canonical = (real === parse(real).root ? real : real.replace(/[\\/]$/, "")).replace(/\\/g, "/");
     return process.platform === "win32" ? canonical.toLowerCase() : canonical;
   } catch {
     throw new CollaborationError("path_blocked", "Project path must exist and be accessible.");
@@ -53,7 +55,7 @@ export class ProfileStore {
       profile, revision: config.revision, project,
       budgets: {
         daily_usd: config.budgets.daily_usd,
-        project_daily_usd: Math.min(config.budgets.project_daily_usd, override?.budgets?.project_daily_usd ?? Infinity),
+        project_daily_usd: Math.min(config.budgets.project_daily_usd, override?.budgets?.project_daily_usd ?? Infinity, override?.budgets?.daily_usd ?? Infinity),
         per_call_usd: Math.min(config.budgets.per_call_usd, override?.budgets?.per_call_usd ?? Infinity),
       },
       routes: override?.routes ?? config.routes,
@@ -101,6 +103,7 @@ export class ProfileStore {
       if (project) config.projects[project] = { ...config.projects[project], profile };
       else config.active_profile = profile;
     }, expectedRevision);
-    return { previous, current: profile, effective_project: project ?? null, policy_version: 1, revision: config.revision, effective_at: config.updated_at };
+    return { previous, current: profile, effective_profile: config.active_profile === "gpt_only" ? "gpt_only" : project ? config.projects[project]?.profile ?? config.active_profile : config.active_profile,
+      effective_project: project ?? null, policy_version: 1, revision: config.revision, effective_at: config.updated_at };
   }
 }

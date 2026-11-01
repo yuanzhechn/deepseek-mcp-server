@@ -6,6 +6,9 @@ import {
   type CallToolResult,
 } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { CollaborationService } from "./collaboration/delegation-service.js";
+import { CollaborationError } from "./collaboration/errors.js";
+import { registerCollaborationTools } from "./collaboration/mcp-tools.js";
 
 import { ConversationStore } from "./conversation-store.js";
 import { DeepSeekApiClient, DeepSeekApiError } from "./deepseek/client.js";
@@ -40,6 +43,7 @@ export interface DeepSeekMcpServerOptions {
   defaultModel: string;
   version?: string;
   toolRateLimit?: number;
+  collaboration?: CollaborationService;
 }
 
 const ENDPOINT_MATRIX = [
@@ -127,7 +131,7 @@ const NON_RETRYABLE_RESPONSE_ERROR_CODES = new Set([
 const rawResponseOutputSchema = z.record(z.string(), z.unknown()).optional();
 
 const errorOutputShape = {
-  error_type: z.enum(["deepseek_api_error", "tool_execution_error"]).optional(),
+  error_type: z.string().optional(),
   status: z.number().int().nullable().optional(),
   message: z.string().optional(),
   retryable: z.boolean().optional(),
@@ -498,6 +502,7 @@ function registerTools(
   server: McpServer,
   options: DeepSeekMcpServerOptions,
 ): void {
+  const collaboration = options.collaboration ?? new CollaborationService();
   const limit = options.toolRateLimit ?? 120;
   const guard =
     <TInput>(
@@ -534,6 +539,7 @@ function registerTools(
       budget.used += 1;
       return handler(input, context);
     };
+  registerCollaborationTools(server, collaboration, options.client, makeToolErrorResult, guard);
   server.registerTool(
     "chat_completion",
     {
@@ -553,12 +559,9 @@ function registerTools(
         const normalizedInput = input as ChatCompletionToolInput;
 
         const conversationId = normalizedInput.conversation_id;
-        if (conversationId && normalizedInput.clear_conversation) {
-          options.conversations.clear(conversationId);
-        }
 
         const newMessages = normalizeInputMessages(normalizedInput);
-        const existingHistory = conversationId
+        const existingHistory = conversationId && !normalizedInput.clear_conversation
           ? options.conversations.get(conversationId)
           : [];
         const outboundMessages = conversationId
@@ -570,11 +573,10 @@ function registerTools(
           outboundMessages,
           options.defaultModel,
         );
-        const result = await options.client.createChatCompletion(
-          request,
-          context.mcpReq.signal,
-        );
+        const { result, receipt } = await collaboration.runGeneration("chat", request, context.mcpReq.signal,
+          () => options.client.createChatCompletion(request, context.mcpReq.signal));
         context.mcpReq.signal.throwIfAborted();
+        if (conversationId && normalizedInput.clear_conversation) options.conversations.clear(conversationId);
 
         const choice = result.response.choices[0];
         const assistantMessage = choice?.message;
@@ -609,6 +611,7 @@ function registerTools(
 
         const structuredContent: Record<string, unknown> = {
           model: result.response.model,
+          collaboration: receipt,
           conversation_id: conversationId ?? null,
           response_text: responseText,
           reasoning_content: reasoning ?? null,
@@ -653,16 +656,15 @@ function registerTools(
           normalizedInput,
           options.defaultModel,
         );
-        const result = await options.client.createCompletion(
-          request,
-          context.mcpReq.signal,
-        );
+        const { result, receipt } = await collaboration.runGeneration("fim", request, context.mcpReq.signal,
+          () => options.client.createCompletion(request, context.mcpReq.signal));
         const choice = result.response.choices[0];
         const includeRawResponse = normalizedInput.include_raw_response;
 
         const structuredContent: Record<string, unknown> = {
           model: result.response.model,
           text: choice?.text ?? "",
+          collaboration: receipt,
           finish_reason: choice?.finish_reason ?? null,
           usage: result.response.usage ?? null,
           stream_chunk_count: result.streamChunkCount ?? null,
@@ -708,10 +710,8 @@ function registerTools(
           normalizedInput,
           options.defaultModel,
         );
-        const result = await options.client.createResponse(
-          request,
-          context.mcpReq.signal,
-        );
+        const { result, receipt } = await collaboration.runGeneration("response", request, context.mcpReq.signal,
+          () => options.client.createResponse(request, context.mcpReq.signal));
         const outputText = collectResponseContent(
           result.response.output,
           "output_text",
@@ -755,6 +755,7 @@ function registerTools(
           model: result.response.model,
           status: result.response.status,
           output_text: outputText,
+          collaboration: receipt,
           reasoning_text: reasoningText || null,
           function_calls: functionCalls,
           custom_tool_calls: customToolCalls,
@@ -874,6 +875,7 @@ function registerTools(
     guard(async (input: UploadFileToolInput, context) => {
       try {
         const normalizedInput = input as UploadFileToolInput;
+        await collaboration.assertUpload(normalizedInput);
         const file = await options.client.uploadFile(
           {
             filename: normalizedInput.filename,
@@ -1244,17 +1246,15 @@ function collectResponseContent(
     .join("");
 }
 
-function makeToolErrorResult(error: unknown): {
-  isError: true;
-  content: [{ type: "text"; text: string }];
-  structuredContent: {
-    error_type: "deepseek_api_error" | "tool_execution_error";
-    status: number | null;
-    message: string;
-    retryable: boolean;
-    suggestion: string;
-  };
-} {
+function makeToolErrorResult(error: unknown): CallToolResult {
+  const receipt = error instanceof Error ? (error as any).collaboration_receipt : undefined;
+  if (error instanceof CollaborationError) {
+    return { isError: true, content: [{ type: "text", text: error.message }], structuredContent: {
+      error_type: error.error_type, status: null, message: error.message, retryable: error.retryable,
+      suggestion: "Inspect local collaboration policy, context and budget. Do not bypass the guard.",
+      ...(receipt ? { collaboration: receipt } : {}),
+    } };
+  }
   if (error instanceof DeepSeekApiError) {
     const retryable = isRetryableDeepSeekError(error.status);
     const suggestion = getDeepSeekErrorSuggestion(error.status);
@@ -1271,6 +1271,7 @@ function makeToolErrorResult(error: unknown): {
       ],
       structuredContent: {
         error_type: "deepseek_api_error",
+        ...(receipt ? { collaboration: receipt } : {}),
         status: error.status ?? null,
         message: error.message,
         retryable,

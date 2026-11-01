@@ -3,7 +3,9 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN apk add --no-cache --virtual .native-build python3 make g++ \
+    && npm ci \
+    && apk del .native-build
 
 FROM deps AS build
 
@@ -21,7 +23,13 @@ LABEL org.opencontainers.image.source="https://github.com/DMontgomery40/deepseek
 ENV NODE_ENV=production
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN apk add --no-cache --virtual .native-build python3 make g++ \
+    && npm ci --omit=dev \
+    && apk del .native-build
+
+# Keep policy and budget state across container restarts; mount this directory.
+ENV DEEPSEEK_COLLAB_STATE_DIR=/var/lib/deepseek-mcp
+VOLUME /var/lib/deepseek-mcp
 
 COPY --from=build /app/build ./build
 

@@ -163,7 +163,7 @@ afterEach(() => {
 });
 
 describe("createDeepSeekMcpServer", () => {
-  it("registers only documented DeepSeek API tools", async () => {
+  it("retains documented DeepSeek API tools and adds collaboration tools", async () => {
     const harness = await createHarness();
 
     try {
@@ -176,14 +176,21 @@ describe("createDeepSeekMcpServer", () => {
         "completion",
         "create_response",
         "delete_file",
+        "delegate_task",
+        "estimate_task_cost",
+        "get_collab_status",
+        "get_usage_report",
         "get_user_balance",
         "list_conversations",
+        "list_collab_profiles",
         "list_files",
         "list_models",
         "reset_conversation",
         "retrieve_file",
+        "route_task",
+        "set_collab_profile",
         "upload_file",
-      ]);
+      ].sort());
 
       for (const tool of tools.tools) {
         expect(tool.inputSchema).toMatchObject({ type: "object" });

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "id": "deepseek-2026-11-01",
+  "source_url": "https://api-docs.deepseek.com/quick_start/pricing/",
+  "verified_at": "2026-11-01T00:00:00.000Z",
+  "effective_at": "2026-11-01T00:00:00.000Z",
+  "peak_utc_hours": [
+    [
+      1,
+      4
+    ],
+    [
+      6,
+      10
+    ]
+  ],
+  "chinese_holidays": [],
+  "holiday_calendar_complete_years": [],
+  "search_per_1000_usd": 0.75,
+  "fetch_per_1000_usd": 0.75,
+  "models": {
+    "deepseek-flash": {
+      "off_peak": {
+        "input_miss": 0.15,
+        "input_hit": 0.003,
+        "output": 0.6
+      },
+      "peak": {
+        "input_miss": 0.3,
+        "input_hit": 0.006,
+        "output": 1.2
+      }
+    },
+    "deepseek-v4-pro": {
+      "off_peak": {
+        "input_miss": 0.66,
+        "input_hit": 0.022,
+        "output": 1.98
+      },
+      "peak": {
+        "input_miss": 1.32,
+        "input_hit": 0.044,
+        "output": 3.96
+      }
+    }
+  }
+}

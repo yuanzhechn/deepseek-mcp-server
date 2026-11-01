@@ -11,6 +11,7 @@ import { loadRuntimeConfig } from "./config.js";
 import { DeepSeekApiClient } from "./deepseek/client.js";
 import { createDeepSeekMcpServer } from "./mcp-server.js";
 import { startStreamableHttpServer } from "./transports/http.js";
+import { CollaborationService } from "./collaboration/delegation-service.js";
 
 async function main(): Promise<void> {
   const config = loadRuntimeConfig();
@@ -22,6 +23,7 @@ async function main(): Promise<void> {
   });
 
   const conversations = new ConversationStore(config.conversationMaxMessages);
+  const collaboration = new CollaborationService();
 
   const createMcpServer = () =>
     createDeepSeekMcpServer({
@@ -29,6 +31,7 @@ async function main(): Promise<void> {
       conversations,
       defaultModel: config.defaultModel,
       toolRateLimit: config.toolRateLimit,
+      collaboration,
     });
 
   if (config.transport === "stdio") {
@@ -38,6 +41,7 @@ async function main(): Promise<void> {
 
     installShutdownHandlers(async () => {
       await stdioRuntime.close();
+      collaboration.close();
     });
 
     return;
@@ -58,6 +62,7 @@ async function main(): Promise<void> {
 
   installShutdownHandlers(async () => {
     await httpRuntime.close();
+    collaboration.close();
   });
 }
 
