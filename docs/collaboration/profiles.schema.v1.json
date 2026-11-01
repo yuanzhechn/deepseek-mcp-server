@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "default": 1,
+      "type": "number",
+      "const": 1
+    },
+    "revision": {
+      "default": 0,
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "updated_at": {
+      "default": "1970-01-01T00:00:00.000Z",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "active_profile": {
+      "default": "balanced",
+      "type": "string",
+      "enum": [
+        "gpt_only",
+        "quality",
+        "balanced",
+        "economy",
+        "custom"
+      ]
+    },
+    "budgets": {
+      "default": {
+        "daily_usd": 5,
+        "project_daily_usd": 5,
+        "per_call_usd": 1
+      },
+      "type": "object",
+      "properties": {
+        "daily_usd": {
+          "default": 5,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "project_daily_usd": {
+          "default": 5,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "per_call_usd": {
+          "default": 1,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "daily_usd",
+        "project_daily_usd",
+        "per_call_usd"
+      ],
+      "additionalProperties": false
+    },
+    "routes": {
+      "default": [],
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "task_type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "risk": {
+            "type": "string",
+            "enum": [
+              "R0",
+              "R1",
+              "R2",
+              "R3"
+            ]
+          },
+          "executor": {
+            "type": "string",
+            "enum": [
+              "gpt",
+              "deepseek-flash",
+              "deepseek-v4-pro"
+            ]
+          }
+        },
+        "required": [
+          "task_type",
+          "executor"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "allow_r3": {
+      "default": false,
+      "type": "boolean"
+    },
+    "allow_private_context": {
+      "default": false,
+      "type": "boolean"
+    },
+    "gpt_quota_level": {
+      "default": "unknown",
+      "type": "string",
+      "enum": [
+        "unknown",
+        "high",
+        "medium",
+        "low",
+        "exhausted"
+      ]
+    },
+    "projects": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "enum": [
+              "gpt_only",
+              "quality",
+              "balanced",
+              "economy",
+              "custom"
+            ]
+          },
+          "budgets": {
+            "type": "object",
+            "properties": {
+              "daily_usd": {
+                "default": 5,
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "project_daily_usd": {
+                "default": 5,
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "per_call_usd": {
+                "default": 1,
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000
+              }
+            },
+            "additionalProperties": false
+          },
+          "routes": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "task_type": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "risk": {
+                  "type": "string",
+                  "enum": [
+                    "R0",
+                    "R1",
+                    "R2",
+                    "R3"
+                  ]
+                },
+                "executor": {
+                  "type": "string",
+                  "enum": [
+                    "gpt",
+                    "deepseek-flash",
+                    "deepseek-v4-pro"
+                  ]
+                }
+              },
+              "required": [
+                "task_type",
+                "executor"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "allow_r3": {
+            "type": "boolean"
+          },
+          "allow_private_context": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "revision",
+    "updated_at",
+    "active_profile",
+    "budgets",
+    "routes",
+    "allow_r3",
+    "allow_private_context",
+    "gpt_quota_level",
+    "projects"
+  ],
+  "additionalProperties": false
+}
