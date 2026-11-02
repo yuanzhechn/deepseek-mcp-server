@@ -502,7 +502,7 @@ function registerTools(
   server: McpServer,
   options: DeepSeekMcpServerOptions,
 ): void {
-  const collaboration = options.collaboration ?? new CollaborationService();
+  const collaboration = options.collaboration ?? new CollaborationService({ defaultModel: options.defaultModel });
   const limit = options.toolRateLimit ?? 120;
   const guard =
     <TInput>(

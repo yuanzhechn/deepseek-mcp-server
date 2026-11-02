@@ -53,10 +53,15 @@
 3. `create_response` 仍保留原输入契约，但服务端 `web_search` 路径会返回 `unbounded_tool_cost`。独立 Search/Fetch API 不在现有工具范围；其请求计数不可可靠观测，不能声称已完整计费。主控自行检索后提供有限摘录。
 4. 费率按官方页面核对，价格表可外置更新；内置中国公共假期日历不完整并明确标注，工作日高峰估价可能偏高。报价不是供应商最终账单。输入按字节和保守开销预约，图片/文件按完整上下文窗口预约，可能拒绝实际可负担的请求。
 5. 文本秘密扫描与旧接口风险推断不是完整 DLP/语义安全系统；图片和未标记的隐私仍需主控正确分类、最小授权。单状态目录面向一个可信操作员，不提供互不信任租户隔离。
-6. 原有对话仍是进程内 Map；不实现会话加密、自动续跑、指标驱动路由或自动 Flash→Pro 重发。模型质量、延迟与节省比例尚未建立评测证据。
+6. 原有对话仍是进程内 Map；不实现会话加密、自动续跑、指标驱动路由或自动型号升级重发。模型质量、延迟与节省比例尚未建立评测证据。
 7. 本地只验证 Windows Node 22；Linux Node 20/22/24 与 Windows Node 22 检查已配置在 CI，远程结果需单独观察。Docker 原生编译依赖已补充，本机未执行 Docker 构建。
 8. 本次包版本仍为 1.4.1，属于未发布功能分支；正式发布前应决定 fork 的包/registry 身份、版本号和 tag，并运行同一包验收，不能把上游 npm 1.4.1 当作本次改造。
 
 ## 后续路线
 
 先在用户提供运行时 Key 的环境中进行一次受 $0.001 左右硬上限约束的真实 API 验证，再按 `evals.md` 做授权任务评测。之后可讨论人工核账入口、完整假期数据和可观测的 Search/Fetch 计费。Phase 3 托盘/Dashboard 与 Phase 4 隔离 worktree/DAG 不在本次上线范围，需用户另行选择。
+
+
+Collaboration amendment (2026-11-02): routes name only GPT or DeepSeek. The backend `DEEPSEEK_DEFAULT_MODEL` selects the actual provider model independently of profile/task type; technical pricing catalogs and audit receipts retain actual IDs for accurate accounting. Legacy model-specific route entries migrate to `deepseek`. Economy increases useful DeepSeek work, not reduces work or quality. Supply sufficient authorized context; run all necessary builds, tests and reviews. Multi-round analysis, repair and retesting are allowed within explicit budgets and permissions. Parallelism depends on dependencies, resources and safety, never on economy mode alone. Integrate verified work without reimplementing it. Failed candidates should return to DeepSeek for diagnosis/repair before GPT takeover when appropriate. Independent task/attempt bounds remain resource controls, not a cap on the overall repair workflow. No host model/account switching or DeepSeek-primary profile is added.
+
+补充验收：2026-11-02 已通过 142 项测试。新增覆盖经济模式委派范围大于均衡模式、两档质量门槛一致、旧型号路由配置迁移，以及不同档位使用同一底层配置型号。

@@ -51,6 +51,18 @@ describe("price catalog and usage", () => {
 });
 
 describe("atomic budgets and delegation", () => {
+  it("uses one configured backend model independent of profile and task size", async () => {
+    const { service, store, root } = fixture();
+    const configured = new CollaborationService({ store, project: root, defaultModel: "deepseek-v4-pro" });
+    const api = { createChatCompletion: vi.fn(async () => response()) };
+    try {
+      for (const [index, profile] of (["balanced", "economy"] as const).entries()) {
+        await store.setProfile(profile);
+        await configured.delegate({ ...task(), task_id: `configured-${index}` }, api as unknown as DeepSeekApiClient, new AbortController().signal);
+      }
+      for (const call of api.createChatCompletion.mock.calls as any[]) expect(call[0].model).toBe("deepseek-v4-pro");
+    } finally { configured.close(); }
+  });
   it("never oversells the budget across 20 independent processes", async () => {
     const { root, service } = fixture(); const snapshot = await service.snapshot();
     snapshot.budgets = { per_call_usd: 1, daily_usd: 1, project_daily_usd: 1 };
@@ -135,7 +147,7 @@ describe("atomic budgets and delegation", () => {
   it("delegates a real API-shaped response as a proposal and never writes project files", async () => {
     const { service } = fixture(); const api = { createChatCompletion: vi.fn(async () => response()) };
     const result = await service.delegate(task(), api as unknown as DeepSeekApiClient, new AbortController().signal);
-    expect(result).toMatchObject({ status: "proposed", task_id: "task-1", model: "deepseek-flash", files_written: false, validation: "host_review_and_tests_required" });
+    expect(result).toMatchObject({ status: "proposed", task_id: "task-1", model: "DeepSeek", provider_details: { model: "deepseek-flash" }, files_written: false, validation: "host_review_and_tests_required" });
     expect(api.createChatCompletion.mock.calls).toHaveLength(1);
     await expect(service.delegate(task(), api as unknown as DeepSeekApiClient, new AbortController().signal)).rejects.toMatchObject({ error_type: "duplicate_task" });
   });

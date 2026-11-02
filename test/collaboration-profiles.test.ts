@@ -19,6 +19,24 @@ function fixture() {
 afterEach(() => { for (const root of directories.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
 describe("versioned profiles and deterministic routing", () => {
+  it("economy delegates more suitable work with identical quality and safety gates", async () => {
+    const { store, project } = fixture(); const router = new TaskRouter();
+    for (const task_type of ["requirements", "planning", "architecture", "code_review"]) {
+      const input = routeTaskSchema.parse({ task_type, risk: "R2" });
+      await store.setProfile("balanced"); const balanced = router.route(input, await store.effective(project));
+      await store.setProfile("economy"); const economy = router.route(input, await store.effective(project));
+      expect(balanced.route).toBe("gpt"); expect(economy.route).toBe("deepseek");
+      expect(economy.quality_requirements).toEqual(balanced.quality_requirements);
+      expect(economy.workflow).toMatchObject({ repair_preference: "deepseek_first", parallelism: "dependency_resource_and_safety_based", sufficient_authorized_context: true, verified_work: "integrate_without_reimplementation" });
+    }
+    expect(router.route(routeTaskSchema.parse({ task_type: "security", risk: "R3" }), await store.effective(project)).route).toBe("gpt");
+  });
+  it("migrates old model-specific global and project route entries without using them for dispatch", async () => {
+    const { store, project } = fixture(); await store.setProfile("custom");
+    writeFileSync(store.path, JSON.stringify({ schema_version: 1, active_profile: "custom", routes: [{ task_type: "implementation", executor: "deepseek-v4-pro" }], projects: { [project]: { routes: [{ task_type: "documentation", executor: "deepseek-flash" }] } } }));
+    const config = await store.read(); expect(config.routes[0].executor).toBe("deepseek");
+    expect(config.projects[project].routes?.[0].executor).toBe("deepseek");
+  });
   it("defaults to balanced, persists on restart, and rejects stale revisions", async () => {
     const { store } = fixture();
     expect((await store.read()).active_profile).toBe("balanced");
@@ -61,8 +79,8 @@ describe("versioned profiles and deterministic routing", () => {
   });
   it.each([
     ["gpt_only", "implementation", "R1", "gpt"], ["quality", "implementation", "R1", "gpt"],
-    ["quality", "documentation", "R0", "deepseek-flash"], ["balanced", "implementation", "R1", "deepseek-flash"],
-    ["balanced", "complex_refactor", "R2", "deepseek-v4-pro"], ["economy", "complex_refactor", "R2", "deepseek-flash"],
+    ["quality", "documentation", "R0", "deepseek"], ["balanced", "implementation", "R1", "deepseek"],
+    ["balanced", "complex_refactor", "R2", "deepseek"], ["economy", "complex_refactor", "R2", "deepseek"],
     ["custom", "implementation", "R1", "gpt"], ["economy", "security", "R3", "gpt"],
   ] as const)("routes %s / %s / %s to %s", async (profile, task_type, risk, expected) => {
     const { store, project } = fixture(); await store.setProfile(profile);
@@ -73,10 +91,10 @@ describe("versioned profiles and deterministic routing", () => {
   });
   it("enforces capability/risk/data gates ahead of custom mappings and reports user quota honestly", async () => {
     const { store, project } = fixture();
-    await store.update((c) => { c.active_profile = "custom"; c.gpt_quota_level = "low"; c.routes = [{ task_type: "implementation", executor: "deepseek-v4-pro" }]; });
+    await store.update((c) => { c.active_profile = "custom"; c.gpt_quota_level = "low"; c.routes = [{ task_type: "implementation", executor: "deepseek" }]; });
     const base = { task_type: "implementation", risk: "R1" };
     const route = async (extra: Record<string, unknown>) => new TaskRouter().route(routeTaskSchema.parse({ ...base, ...extra }), await store.effective(project));
-    expect(await route({ needs_vision: true })).toMatchObject({ route: "deepseek-flash", gpt_quota: { source: "user_reported", level: "low" } });
+    expect(await route({ needs_vision: true })).toMatchObject({ route: "deepseek", gpt_quota: { source: "user_reported", level: "low" } });
     for (const extra of [{ needs_web: true }, { risk: "R3" }, { data_classification: "secret" }, { cost_cap_usd: 0 }]) {
       expect((await route(extra)).execution).toBe("host_required");
     }

@@ -2,7 +2,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { ProfileStore, canonicalProject } from "../collaboration/profile-store.js";
-import { PROFILES, budgetsSchema, profileIdSchema, quotaSchema, profileConfigSchema } from "../collaboration/profile-schema.js";
+import { PROFILES, budgetsSchema, profileIdSchema, quotaSchema, profileConfigSchema, migrateLegacyExecutors } from "../collaboration/profile-schema.js";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -32,7 +32,7 @@ async function main() {
       else config.budgets = budgets;
     }, revision);
   } else if (command === "config" && action === "apply" && value && !project) {
-    const replacement = profileConfigSchema.parse(JSON.parse(await readFile(resolve(value), "utf8")));
+    const replacement = profileConfigSchema.parse(migrateLegacyExecutors(JSON.parse(await readFile(resolve(value), "utf8"))));
     result = await store.update((config) => { const oldRevision = config.revision; Object.assign(config, replacement, { revision: oldRevision }); }, revision);
   } else {
     throw new Error("Usage: collab profile list|get|set <profile> | quota set unknown|high|medium|low|exhausted | budget set '<JSON>' | config apply <file> [--project <path>] [--state-dir <path>] [--expected-revision <n>] [--json]");

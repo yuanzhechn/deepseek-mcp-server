@@ -89,8 +89,7 @@
             "type": "string",
             "enum": [
               "gpt",
-              "deepseek-flash",
-              "deepseek-v4-pro"
+              "deepseek"
             ]
           }
         },
@@ -187,8 +186,7 @@
                   "type": "string",
                   "enum": [
                     "gpt",
-                    "deepseek-flash",
-                    "deepseek-v4-pro"
+                    "deepseek"
                   ]
                 }
               },

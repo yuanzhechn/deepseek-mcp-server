@@ -5,7 +5,7 @@ import { realpathSync, statSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { CollaborationError } from "./errors.js";
-import { EffectivePolicy, ProfileConfig, profileConfigSchema, ProfileId } from "./profile-schema.js";
+import { EffectivePolicy, ProfileConfig, profileConfigSchema, ProfileId, migrateLegacyExecutors } from "./profile-schema.js";
 
 export function defaultStateDirectory(env = process.env): string {
   if (env.DEEPSEEK_COLLAB_STATE_DIR) return resolve(env.DEEPSEEK_COLLAB_STATE_DIR);
@@ -40,7 +40,7 @@ export class ProfileStore {
   }
   async read(): Promise<ProfileConfig> {
     try {
-      return profileConfigSchema.parse(JSON.parse(await readFile(this.path, "utf8")));
+      return profileConfigSchema.parse(migrateLegacyExecutors(JSON.parse(await readFile(this.path, "utf8"))));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return profileConfigSchema.parse({});
       throw new CollaborationError("configuration_error", "Invalid profiles.json or unsupported schema_version; refusing to reset policy.");

@@ -33,7 +33,7 @@ export class CollaborationService {
   readonly policy = new PolicyEngine();
   readonly router = new TaskRouter(this.policy);
   private ledgerInstance?: UsageLedger;
-  constructor(readonly options: { store?: ProfileStore; project?: string; allowedProjects?: string[]; managementToken?: string; priceFile?: string } = {}) {
+  constructor(readonly options: { store?: ProfileStore; project?: string; allowedProjects?: string[]; managementToken?: string; priceFile?: string; defaultModel?: string } = {}) {
     this.store = options.store ?? new ProfileStore();
     this.project = canonicalProject(options.project ?? process.env.DEEPSEEK_COLLAB_PROJECT ?? process.cwd());
     this.roots = [...new Set([this.project, ...(options.allowedProjects ?? (process.env.DEEPSEEK_COLLAB_ALLOWED_PROJECTS?.split(";").filter(Boolean) ?? [])).map(canonicalProject)])];
@@ -52,13 +52,17 @@ export class CollaborationService {
       throw new CollaborationError("management_unauthorized", "MCP profile changes require the configured management token. Use the local collab CLI otherwise.");
     }
   }
+  private selectedModel() { return this.options.defaultModel ?? process.env.DEEPSEEK_DEFAULT_MODEL ?? "deepseek-flash"; }
   pricing() { return new Pricing(loadCatalog(this.options.priceFile)); }
   async route(input: z.infer<typeof routeTaskSchema>) {
     const snapshot = await this.snapshot(input.project_path);
     const result = this.router.route(input, snapshot);
     if (result.route === "gpt") return result;
+    if (input.needs_vision && !["deepseek-flash", "deepseek-v4-flash", "deepseek-v4-flash-vision-exp"].includes(this.selectedModel())) {
+      return { ...result, route: "gpt", executor_name: "GPT", execution: "host_required", reasons: [...result.reasons, "Configured DeepSeek backend lacks vision; model selection remains a backend configuration decision."] };
+    }
     const inputTokens = { small: 4096, medium: 16384, large: 65536 }[input.size_hint];
-    const estimate = this.pricing().quote(result.route, inputTokens, 4096, 0, new Date(), true);
+    const estimate = { ...this.pricing().quote(this.selectedModel(), inputTokens, 4096, 0, new Date(), true), model: "DeepSeek" };
     const available = this.ledger.available(snapshot);
     if (estimate.estimated_usd > Math.min(input.cost_cap_usd ?? Infinity, available)) {
       return { ...result, route: "gpt", execution: "host_required", reasons: [...result.reasons, "Estimated request exceeds remaining task/per-call/daily/project budget."], estimated_cost: estimate, available_deepseek_usd: available };
@@ -162,7 +166,7 @@ export class CollaborationService {
     signal.addEventListener("abort", cancel, { once: true });
     if (signal.aborted) cancel();
     const timer = setTimeout(() => controller.abort(new Error("Delegation deadline exceeded")), input.deadline_ms);
-    const request = { model: route.route, messages, max_tokens: input.max_output_tokens };
+    const request = { model: this.selectedModel(), messages, max_tokens: input.max_output_tokens };
     try {
       const { result, receipt } = await this.runGeneration("chat", request, controller.signal,
         () => client.createChatCompletion(request, controller.signal),
@@ -170,6 +174,7 @@ export class CollaborationService {
       const choice = result.response.choices[0];
       const text = choice?.message.content ?? "";
       return { task_id: input.task_id, status: choice?.finish_reason === "stop" && text ? "proposed" : "incomplete", ...receipt,
+        model: "DeepSeek", executor_name: "DeepSeek", provider_details: { model: receipt.model },
         finish_reason: choice?.finish_reason ?? null, artifacts: text ? [{ type: "candidate_text", content: text }] : [],
         acceptance_criteria: input.acceptance_criteria, validation: "host_review_and_tests_required", files_written: false, gpt_host_active: true };
     } finally { clearTimeout(timer); signal.removeEventListener("abort", cancel); }

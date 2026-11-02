@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   });
 
   const conversations = new ConversationStore(config.conversationMaxMessages);
-  const collaboration = new CollaborationService();
+  const collaboration = new CollaborationService({ defaultModel: config.defaultModel });
 
   const createMcpServer = () =>
     createDeepSeekMcpServer({
