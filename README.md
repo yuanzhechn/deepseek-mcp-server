@@ -17,6 +17,24 @@ balance checks, and bounded in-memory conversations.
 Version 1.4.1 uses the stable MCP TypeScript SDK v2 and serves both the
 2026-07-28 protocol and stateless legacy clients.
 
+## Collaboration profiles (this checkout)
+
+Collaboration routes use **DeepSeek** as one executor; the actual model is selected by backend configuration (`DEEPSEEK_DEFAULT_MODEL`). Economy prioritizes DeepSeek for analysis, planning drafts, implementation, debugging, tests, review, refactoring and documentation. GPT coordinates, integrates, makes key decisions and performs final acceptance. Economy retains the same necessary tests/review, sufficient authorized context, repair iterations and dependency/resource/safety-based parallelism as balanced mode, within explicit budgets and permissions.
+
+This feature branch adds five GPT-host/DeepSeek-delegate profiles, persistent CLI switching, explainable routing, bounded delegation, and an atomic SQLite cost ledger. **These additions require building this checkout; existing npm/hosted versions are not claimed to include them.** GPT remains the host in all profiles. No host account/provider switching is performed.
+
+```powershell
+npm ci
+npm run build
+node build/cli/collab.js profile list
+node build/cli/collab.js profile set economy
+node build/cli/collab.js profile get --json
+```
+
+Restart an existing MCP process once to discover the seven new tools (18 total). Later CLI changes take effect on the next invocation without reconnecting. Global `gpt_only` blocks all DeepSeek generation and uploads, including legacy tools. Defaults: $5/day global and per project, $1/call. MCP profile changes require a separate management token; local CLI changes do not.
+
+See [architecture](docs/collaboration/architecture.md), [profiles and config schema](docs/collaboration/profiles.md), [security](docs/collaboration/security.md), [Windows operations](docs/collaboration/operations-windows.md) and the [implementation report](docs/collaboration/IMPLEMENTATION_REPORT.md). Server-side `web_search` is policy-blocked until request costs can be reliably bounded. GPT subscription quota remains unknown or user-reported, separate from DeepSeek API usage. Tray/dashboard/worktree execution is deferred.
+
 ## What's current
 
 Checked against the official API docs on October 19, 2026:

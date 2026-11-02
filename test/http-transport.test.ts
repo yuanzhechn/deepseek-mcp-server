@@ -128,7 +128,7 @@ describe("Streamable HTTP transport", () => {
       );
       try {
         await client.connect(transport);
-        expect((await client.listTools()).tools).toHaveLength(11);
+        expect((await client.listTools()).tools).toHaveLength(18);
       } finally {
         await client.close();
       }

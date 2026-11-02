@@ -6,7 +6,8 @@
   "type": "module",
   "main": "build/index.js",
   "bin": {
-    "deepseek-mcp-server": "build/index.js"
+    "deepseek-mcp-server": "build/index.js",
+    "collab": "build/cli/collab.js"
   },
   "files": [
     "build/**/*",
@@ -14,7 +15,10 @@
     "assets/favicon-32x32.png",
     "assets/apple-touch-icon.png",
     "src/docs/*.md",
-    "src/docs/*.txt"
+    "src/docs/*.txt",
+    "docs/collaboration/**/*",
+    "skills/collab-mode/SKILL.md",
+    "AGENTS.md"
   ],
   "scripts": {
     "build": "tsc",
@@ -23,12 +27,15 @@
     "test:watch": "vitest --config ./vitest.config.ts",
     "test:live": "npm run build && node scripts/live-smoke.mjs",
     "test:remote": "npm run build && node scripts/remote-smoke.mjs",
+    "test:package": "npm run build && node scripts/package-smoke.mjs",
+    "collab": "node build/cli/collab.js",
     "prepublishOnly": "npm run build",
     "inspect": "npx @modelcontextprotocol/inspector build/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/node": "^2.1.2",
     "@modelcontextprotocol/server": "^2.4.0",
+    "better-sqlite3": "^12.11.1",
     "dotenv": "^18.0.7",
     "hono": "^4.13.13",
     "zod": "^4.6.7"
@@ -38,9 +45,10 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.3.1",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "author": "DMontgomery40",
   "license": "MIT",

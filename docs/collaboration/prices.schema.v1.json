@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "number",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "effective_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "peak_utc_hours": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24
+          }
+        ],
+        "items": false,
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "chinese_holidays": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+      }
+    },
+    "holiday_calendar_complete_years": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "search_per_1000_usd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "fetch_per_1000_usd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "models": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "off_peak": {
+            "type": "object",
+            "properties": {
+              "input_miss": {
+                "type": "number",
+                "minimum": 0
+              },
+              "input_hit": {
+                "type": "number",
+                "minimum": 0
+              },
+              "output": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "input_miss",
+              "input_hit",
+              "output"
+            ],
+            "additionalProperties": false
+          },
+          "peak": {
+            "type": "object",
+            "properties": {
+              "input_miss": {
+                "type": "number",
+                "minimum": 0
+              },
+              "input_hit": {
+                "type": "number",
+                "minimum": 0
+              },
+              "output": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "input_miss",
+              "input_hit",
+              "output"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "off_peak",
+          "peak"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "source_url",
+    "verified_at",
+    "effective_at",
+    "peak_utc_hours",
+    "chinese_holidays",
+    "holiday_calendar_complete_years",
+    "search_per_1000_usd",
+    "fetch_per_1000_usd",
+    "models"
+  ],
+  "additionalProperties": false
+}

@@ -13,6 +13,13 @@ const EXPECTED_TOOLS = [
   "completion",
   "create_response",
   "delete_file",
+  "delegate_task",
+  "estimate_task_cost",
+  "get_collab_status",
+  "get_usage_report",
+  "list_collab_profiles",
+  "route_task",
+  "set_collab_profile",
   "get_user_balance",
   "list_conversations",
   "list_files",
@@ -20,7 +27,7 @@ const EXPECTED_TOOLS = [
   "reset_conversation",
   "retrieve_file",
   "upload_file",
-];
+].sort();
 
 describe("stdio entrypoint", () => {
   it.each([
@@ -44,6 +51,7 @@ describe("stdio entrypoint", () => {
           ...getDefaultEnvironment(),
           DEEPSEEK_API_KEY: "stdio-integration-test",
           MCP_TRANSPORT: "stdio",
+          DEEPSEEK_COLLAB_STATE_DIR: process.env.DEEPSEEK_COLLAB_STATE_DIR!,
         },
         stderr: "pipe",
       });
