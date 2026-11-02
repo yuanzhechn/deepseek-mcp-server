@@ -1,5 +1,17 @@
 # 实施报告：Phase 0–2
 
+## 2026-11-02 简洁 EXE 交付
+
+新增 `desktop/{Program,Backend,SwitcherForm}.cs`、应用 manifest，以及 `build:desktop` / `test:desktop`。原生 WinForms EXE 约 28 KB，无浏览器/WebView/监听端口；支持项目目录选择、五档按钮、范围选择、职责和实时状态。通过现有 CLI 复用原子配置和修订冲突；依赖已有 Node/服务文件，非脱离项目的独立运行时。
+
+验证：实际 EXE 在隔离目录完成中文/空格路径、项目档位持久化、旧修订拒绝、全局 GPT 独立覆盖；145 项回归和干净包安装通过。桌面窗口及目录选择对话框已实际打开验证，未通过测试修改操作员配置。Windows CI 已增加 native self-test。均衡模式 DeepSeek UI 委派网络失败、计费未知，未重发；GPT 接管实现与验收，详见 `desktop.md`。
+
+## 2026-11-02 按钮交付补充
+
+新增 Phase 3 本地 Dashboard（托盘仍未实现）：五档按钮、全局/项目范围、实际生效状态、今日费用、未知/手工 GPT 额度、修订冲突提示及状态轮询。`collab dashboard --open` / `npm run dashboard` / Windows 双击 `start-collab-dashboard.cmd` 启动。只监听本机，独立随机访问令牌、Host/Origin 校验、CSP 与请求大小限制；不使用 API Key、不调用模型，不修改预算和审批权限。
+
+新增 `src/ui/{dashboard,dashboard-page,dashboard-cli}.ts`、`test/dashboard.test.ts` 和启动脚本；CLI、包内容及干净包检查已扩展。145 项测试全部通过，干净包安装与面板启动检查通过；浏览器实际点击已在隔离状态中验证。详见 `dashboard.md`。下文中 Phase 3 尚未实现的记录为此前阶段的历史状态。
+
 日期：2026-11-01。目标仓库：`yuanzhechn/deepseek-mcp-server`。起点：`7a08656b733b5e5d4a71ecd308770226170954eb`，包版本 1.4.1。功能分支：`codex/collaboration-router`。本次保留包版本和上游 registry 标识，不发布 npm 包、不创建发布 tag、不合并 main；新功能以本分支源码构建为准。
 
 两份输入文档作为设计与验收参考，未将其中“已确认”“立即执行”等文字当作额外授权。按本次项目改造请求实现 Phase 0–2，Phase 3/4 仅记录设计。没有修改 Codex 账号、登录、提供商、config.toml 或 models.json，也没有新增主模型切换功能。

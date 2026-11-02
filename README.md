@@ -19,6 +19,10 @@ Version 1.4.1 uses the stable MCP TypeScript SDK v2 and serves both the
 
 ## Collaboration profiles (this checkout)
 
+**Compact native Windows app:** Run `npm run build:desktop`, then open `dist/desktop/DeepSeekCollab.exe`. Five mode buttons and a project folder picker work without a browser or local web server. The EXE reuses the existing Node/CLI installation; see [desktop instructions](docs/collaboration/desktop.md).
+
+**Clickable mode buttons:** On Windows, double-click `start-collab-dashboard.cmd` after building, or run `npm run dashboard`. The localhost panel switches the project/global profile for the next task and uses the same persisted policy as MCP. See [dashboard instructions](docs/collaboration/dashboard.md).
+
 Collaboration routes use **DeepSeek** as one executor; the actual model is selected by backend configuration (`DEEPSEEK_DEFAULT_MODEL`). Economy prioritizes DeepSeek for analysis, planning drafts, implementation, debugging, tests, review, refactoring and documentation. GPT coordinates, integrates, makes key decisions and performs final acceptance. Economy retains the same necessary tests/review, sufficient authorized context, repair iterations and dependency/resource/safety-based parallelism as balanced mode, within explicit budgets and permissions.
 
 This feature branch adds five GPT-host/DeepSeek-delegate profiles, persistent CLI switching, explainable routing, bounded delegation, and an atomic SQLite cost ledger. **These additions require building this checkout; existing npm/hosted versions are not claimed to include them.** GPT remains the host in all profiles. No host account/provider switching is performed.

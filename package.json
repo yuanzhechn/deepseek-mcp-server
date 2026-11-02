@@ -18,7 +18,8 @@
     "src/docs/*.txt",
     "docs/collaboration/**/*",
     "skills/collab-mode/SKILL.md",
-    "AGENTS.md"
+    "AGENTS.md",
+    "start-collab-dashboard.cmd"
   ],
   "scripts": {
     "build": "tsc",
@@ -29,6 +30,9 @@
     "test:remote": "npm run build && node scripts/remote-smoke.mjs",
     "test:package": "npm run build && node scripts/package-smoke.mjs",
     "collab": "node build/cli/collab.js",
+    "dashboard": "npm run build && node build/cli/collab.js dashboard --open",
+    "build:desktop": "node scripts/build-desktop.mjs",
+    "test:desktop": "node scripts/test-desktop.mjs",
     "prepublishOnly": "npm run build",
     "inspect": "npx @modelcontextprotocol/inspector build/index.js"
   },
