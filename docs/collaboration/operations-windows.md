@@ -1,5 +1,7 @@
 # Windows operations
 
+五档按钮已可用：构建后双击项目根目录 `start-collab-dashboard.cmd`，或运行 `npm run dashboard`。详见 [控制面板说明](dashboard.md)。托盘和隔离执行器仍为后续阶段。
+
 Build from this checkout (the new collaboration features are not claimed to be published on npm):
 
 ```powershell

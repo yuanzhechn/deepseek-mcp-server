@@ -6,6 +6,11 @@ import { PROFILES, budgetsSchema, profileIdSchema, quotaSchema, profileConfigSch
 
 async function main() {
   const args = process.argv.slice(2);
+  if (args[0] === "dashboard") {
+    const { runDashboard } = await import("../ui/dashboard-cli.js");
+    await runDashboard(args.slice(1));
+    return;
+  }
   const flag = (name: string) => { const i = args.indexOf(name); if (i < 0) return undefined; const value = args[i + 1]; if (!value || value.startsWith("--")) throw new Error(`Missing ${name} value`); args.splice(i, 2); return value; };
   const state = flag("--state-dir");
   const projectArg = flag("--project");

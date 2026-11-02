@@ -41,6 +41,18 @@ try {
   assert.ok(tools.some((tool) => tool.name === "list_models"));
   const metadata = JSON.parse(readFileSync(join(clean, "node_modules", "deepseek-mcp-server", "package.json"), "utf8"));
   assert.equal(metadata.version, JSON.parse(readFileSync(resolve("package.json"), "utf8")).version);
+  execFileSync(process.execPath, ["--input-type=module", "-e", `
+    import assert from 'node:assert/strict';
+    import { pathToFileURL } from 'node:url';
+    const base=pathToFileURL(process.argv[1]);
+    const { startDashboard }=await import(new URL('./ui/dashboard.js',base));
+    const { CollaborationService }=await import(new URL('./collaboration/delegation-service.js',base));
+    const { ProfileStore }=await import(new URL('./collaboration/profile-store.js',base));
+    const service=new CollaborationService({store:new ProfileStore(process.argv[2])});
+    const runtime=await startDashboard(service);
+    try { const r=await fetch(runtime.origin); assert.equal(r.status,200); assert.ok((await r.text()).includes('DeepSeek')); }
+    finally {await runtime.close();service.close();}
+  `, entry, join(root, "dashboard-state")], { timeout: 15000 });
   if (metadata.bin.collab) {
     const cli = join(clean, "node_modules", "deepseek-mcp-server", metadata.bin.collab);
     const result = JSON.parse(execFileSync(process.execPath, [cli, "profile", "set", "gpt_only", "--state-dir", join(root, "state"), "--json"], { encoding: "utf8" }));
