@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { request } from "node:http";
 import { CollaborationService } from "../src/collaboration/delegation-service.js";
 import { ProfileStore } from "../src/collaboration/profile-store.js";
@@ -20,12 +20,12 @@ async function fixture() {
 }
 describe("localhost collaboration dashboard", () => {
   it("serves a self-contained protected page and requires a session token for state", async () => {
-    const { runtime, headers } = await fixture();
+    const { runtime, headers, root } = await fixture();
     const page = await fetch(runtime.origin); expect(page.status).toBe(200);
     expect(page.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
     const html = await page.text(); expect(html).toContain("成本优先"); expect(html).not.toContain(new URL(runtime.url).hash.slice(1));
     expect((await fetch(`${runtime.origin}/api/status`)).status).toBe(401);
-    const state = await fetch(`${runtime.origin}/api/status`, { headers }); expect(await state.json()).toMatchObject({ profile: "balanced", revision: 0, gpt_host_active: true });
+    const state = await fetch(`${runtime.origin}/api/status`, { headers }); expect(await state.json()).toMatchObject({ profile: "balanced", project_name: basename(root), revision: 0, gpt_host_active: true });
   });
   it("persists button changes for the next task, detects conflicts and respects the global kill switch", async () => {
     const { runtime, headers, service, store } = await fixture();

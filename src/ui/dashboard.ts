@@ -1,3 +1,5 @@
+import { basename } from "node:path";
+import { realpathSync } from "node:fs";
 import { createServer } from "node:http";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
@@ -33,7 +35,7 @@ export async function startDashboard(service: CollaborationService, port = 0) {
       if (req.method === "GET" && req.url === "/api/status") {
         const policy = await service.snapshot();
         const config = await service.store.read();
-        json(200, { ...policy, global_profile: config.active_profile, project_profile: config.projects[policy.project]?.profile ?? null,
+        json(200, { ...policy, project_name: basename(realpathSync.native(policy.project)) || policy.project, global_profile: config.active_profile, project_profile: config.projects[policy.project]?.profile ?? null,
           usage: service.ledger.report(policy.project).totals, available_usd: service.ledger.available(policy), gpt_host_active: true }); return;
       }
       if (req.method === "POST" && req.url === "/api/profile") {
